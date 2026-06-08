@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Orden de Envasado | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Centro de Envasado Industrial</h2>
+        <p style="color: var(--gris-medio); font-size: 0.9rem;">Transformación de aceite bulk y envases en producto terminado (Fórmula 19L).</p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2.5rem;">
+    <!-- Formulario de Producción -->
+    <div class="card">
+        <h3><i class="fas fa-industry" style="color: var(--verde-secundario);"></i> Iniciar Llenado de Bidones</h3>
+        <form action="{{ url_for('envasado') }}" method="POST" id="form-envasado">
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label><i class="fas fa-box-open"></i> Producto a Envasar (Marca y Presentación)</label>
+                <select name="tipo_combo" id="tipo_combo" required style="font-size: 1.1rem; height: 50px; border-radius: 8px; border: 1px solid var(--gris-claro); width: 100%; padding: 0 1rem;">
+                    <option value="ESTANDAR-19L">Fruto Dorado - Bidón 19L (Aceite Estándar)</option>
+                    <option value="PREMIUM-19L">Divina Providencia - Bidón 19L (Aceite Premium)</option>
+                    <option value="PREMIUM-2.5G">Divina Providencia - Botella 2.5 Gal (Aceite Premium)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label><i class="fas fa-hashtag"></i> Unidades a Producir</label>
+                <input type="number" name="cantidad" id="input-cantidad" min="1" required placeholder="Ej: 100" 
+                       style="font-size: 1.5rem; height: 60px; text-align: center; font-weight: 800; border: 2px solid var(--verde-suave);">
+            </div>
+
+            <!-- Simulador de Consumo (Premium) -->
+            <div class="simulator-card" style="background: var(--verde-suave); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--verde-secundario); margin-bottom: 2rem;">
+                <h4 style="color: var(--verde-premium); margin-bottom: 1rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="fas fa-microchip"></i> Simulación de Insumos (Automática)
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <span style="display: block; font-size: 0.75rem; color: var(--gris-medio);">Aceite Bulk Requerido</span>
+                        <strong id="sim-aceite" style="font-size: 1.2rem; color: var(--negro-profundo);">0</strong> 
+                        <span style="font-size: 0.8rem; color: var(--gris-medio);">Litros</span>
+                    </div>
+                    <div style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <span style="display: block; font-size: 0.75rem; color: var(--gris-medio);">Bidones Vacíos Requeridos</span>
+                        <strong id="sim-vacios" style="font-size: 1.2rem; color: var(--negro-profundo);">0</strong>
+                        <span style="font-size: 0.8rem; color: var(--gris-medio);">Unidades</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; height: 55px; font-size: 1.1rem; border-radius: 14px;">
+                <i class="fas fa-vial-circle-check"></i> Procesar Llenado y Actualizar Inventario
+            </button>
+        </form>
+    </div>
+
+    <!-- Panel de Inventario en Tiempo Real -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="card" style="border-left: 5px solid var(--verde-premium);">
+            <h3><i class="fas fa-microscope"></i> Tanques y Cajas</h3>
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 1rem;">
+                <strong style="color: var(--gris-oscuro); font-size: 0.8rem; text-transform: uppercase;">Materia Prima (Bulk)</strong>
+                {% for b in bulk %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-left: 10px;">
+                    <span style="font-size: 0.9rem;"><i class="fas fa-oil-can" style="color: #f59e0b;"></i> {{ b.nombre.split(' - ')[0] }}</span>
+                    <strong style="color: {{ 'var(--verde-premium)' if b.stock_actual > 1000 else '#ef4444' }};">
+                        {{ b.stock_actual }} L
+                        {% if b.factor_conversion > 1 %}
+                        <span style="font-size: 0.8rem; color: var(--naranja-ivvi); font-weight: 500; display: block; text-align: right;">
+                             = {{ (b.stock_actual / b.factor_conversion)|round(2) }} TM
+                        </span>
+                        {% endif %}
+                    </strong>
+                </div>
+                {% endfor %}
+                
+                <hr style="border: none; border-top: 1px dashed var(--gris-claro); margin: 5px 0;">
+                <strong style="color: var(--gris-oscuro); font-size: 0.8rem; text-transform: uppercase;">Insumos (Vacíos)</strong>
+                {% for v in vacio %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-left: 10px;">
+                    <span style="font-size: 0.9rem;"><i class="fas fa-wine-bottle" style="color: var(--gris-medio);"></i> {{ v.nombre.split(' (')[0] }}</span>
+                    <strong style="color: {{ 'var(--verde-premium)' if v.stock_actual > 50 else '#ef4444' }};">{{ v.stock_actual }} UND</strong>
+                </div>
+                {% endfor %}
+
+                <hr style="border: none; border-top: 1px dashed var(--gris-claro); margin: 5px 0;">
+                <strong style="color: var(--gris-oscuro); font-size: 0.8rem; text-transform: uppercase;">Inventario Terminado</strong>
+                {% for t in terminados %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-left: 10px;">
+                    <span style="font-size: 0.9rem;"><i class="fas fa-check-circle" style="color: var(--verde-premium);"></i> {{ t.nombre }}</span>
+                    <strong style="color: var(--verde-premium);">{{ t.stock_actual }} UND</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Historial Reciente de Planta -->
+        <div class="card">
+            <h3><i class="fas fa-clock-rotate-left"></i> Turnos de Llenado Recientes</h3>
+            <div class="table-container" style="max-height: 250px;">
+                <table style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Prod.</th>
+                            <th>ID Orden</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for h in historial %}
+                        <tr>
+                            <td>{{ h.fecha.strftime('%d/%m %H:%M') }}</td>
+                            <td><span class="badge badge-success">+{{ h.cantidad }}</span></td>
+                            <td style="font-family: monospace;">{{ h.documento_id }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; padding: 1rem; opacity: 0.5;">Sin registros hoy.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    const selectCombo = document.getElementById('tipo_combo');
+    const inputCant = document.getElementById('input-cantidad');
+    const simAceite = document.getElementById('sim-aceite');
+    const simVacios = document.getElementById('sim-vacios');
+
+    function actualizarSimulador() {
+        const cant = parseInt(inputCant.value) || 0;
+        const combo = selectCombo.value;
+        const ratio = (combo === 'PREMIUM-2.5G') ? 9.5 : 19;
+        
+        simAceite.innerText = (cant * ratio).toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
+        simVacios.innerText = cant.toLocaleString();
+    }
+
+    selectCombo.addEventListener('change', actualizarSimulador);
+    inputCant.addEventListener('input', actualizarSimulador);
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Centro de Inteligencia de Negocios | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Reportes y Analítica Avanzada</h2>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Reporte de Compras -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="width: 50px; height: 50px; background: rgba(245, 158, 11, 0.1); color: var(--naranja-ivvi); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.5rem;">
+                <i class="fas fa-cart-shopping"></i>
+            </div>
+            <h3>Análisis de Adquisiciones</h3>
+            <p style="color: var(--gris-medio); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                Consolidado histórico de compras, costos medios por proveedor y auditoría de ingresos a almacén.
+            </p>
+        </div>
+        <a href="{{ url_for('reporte_compras_excel') }}" class="btn btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
+            <i class="fas fa-file-excel"></i> Exportar Data (.xlsx)
+        </a>
+    </div>
+
+    <!-- Reporte de Ventas -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="width: 50px; height: 50px; background: rgba(5, 150, 105, 0.1); color: var(--verde-secundario); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.5rem;">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>Rendimiento Comercial</h3>
+            <p style="color: var(--gris-medio); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                Seguimiento de despacho por cliente, volumen de facturación y rentabilidad por línea de producto.
+            </p>
+        </div>
+        <a href="{{ url_for('reporte_ventas_excel') }}" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
+            <i class="fas fa-file-excel"></i> Exportar Ventas (.xlsx)
+        </a>
+    </div>
+
+    <!-- Reporte de Inventario -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="width: 50px; height: 50px; background: rgba(6, 78, 59, 0.1); color: var(--verde-premium); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.5rem;">
+                <i class="fas fa-boxes-packing"></i>
+            </div>
+            <h3>Balance de Logística</h3>
+            <p style="color: var(--gris-medio); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                Corte de inventario a la fecha, alertas de obsolescencia y rotación de stock por categoría.
+            </p>
+        </div>
+        <a href="{{ url_for('reporte_inventario_excel') }}" class="btn btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
+            <i class="fas fa-table-list"></i> Descargar Inventario (.xlsx)
+        </a>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1rem; border: 1px dashed var(--verde-secundario); background: rgba(5, 150, 105, 0.02);">
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="font-size: 2.5rem; color: var(--verde-secundario); opacity: 0.5;">
+            <i class="fas fa-microchip"></i>
+        </div>
+        <div>
+            <h4 style="color: var(--verde-premium); margin-bottom: 5px;">Módulo de Inteligencia Predictiva</h4>
+            <p style="color: var(--gris-medio); font-size: 0.85rem;">Próximamente: Integración con IA para predicción de demanda basada en historial de 12 meses.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

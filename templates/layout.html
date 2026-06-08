@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IVVI - Sistema de Gestión</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="navbar">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo IVVI S.A." style="height: 38px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
+            <h2 style="margin: 0;">Sistema de Gestión</h2>
+        </div>
+        <nav>
+            {% if current_user %}
+                <a href="{{ url_for('index') }}">Inicio</a>
+                {% if current_user.rol in ['Administrador', 'Inventario', 'Ventas'] %}
+                <a href="{{ url_for('productos') }}">Inventario</a>
+                {% endif %}
+                {% if current_user.rol in ['Administrador', 'Inventario'] %}
+                <a href="{{ url_for('compras') }}">Compras</a>
+                <a href="{{ url_for('proveedores') }}">Proveedores</a>
+                {% endif %}
+                {% if current_user.rol in ['Administrador', 'Ventas'] %}
+                <a href="{{ url_for('ventas') }}">Ventas</a>
+                <a href="{{ url_for('clientes') }}">Clientes</a>
+                {% endif %}
+                {% if current_user.rol == 'Administrador' %}
+                <a href="{{ url_for('usuarios') }}">Usuarios</a>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}" style="background-color: #8c2a2a; margin-left:1rem;">Salir ({{ current_user.nombre }})</a>
+            {% endif %}
+        </nav>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

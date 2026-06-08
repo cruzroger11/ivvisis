@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Auditoría Kardex | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Libro de Movimientos (Kardex)</h2>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <button class="btn btn-secondary" onclick="window.print()">
+            <i class="fas fa-print"></i> Reporte de Auditoría
+        </button>
+        <a href="{{ url_for('reporte_kardex_excel') }}" class="btn btn-primary">
+            <i class="fas fa-file-csv"></i> Descargar Datos
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <h3><i class="fas fa-history" style="color: var(--verde-secundario);"></i> Trazabilidad Inmutable de Inventario</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha / Hora</th>
+                    <th style="text-align: center;">Tipo de Flujo</th>
+                    <th>Documento / REF</th>
+                    <th>Producto / Material</th>
+                    <th style="text-align: center;">Variación</th>
+                    <th>Responsable</th>
+                    <th>Observaciones Técnicas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in items %}
+                <tr>
+                    <td>
+                        <span style="font-size: 0.9rem; font-weight: 500; color: var(--gris-oscuro);">
+                            <i class="far fa-clock" style="margin-right: 5px; opacity: 0.6;"></i>
+                            {{ m.fecha.strftime('%d/%m/%Y') }} <small style="display: block; opacity: 0.7; font-size: 0.75rem; margin-left: 20px;">{{ m.fecha.strftime('%H:%M:%S') }}</small>
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if m.tipo_movimiento == 'ENTRADA' %}
+                        <span class="badge badge-success" style="width: 100px; justify-content: center;">
+                            <i class="fas fa-right-to-bracket"></i> {{ m.tipo_movimiento }}
+                        </span>
+                        {% else %}
+                        <span class="badge badge-danger" style="width: 100px; justify-content: center;">
+                            <i class="fas fa-right-from-bracket"></i> {{ m.tipo_movimiento }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <code style="background: var(--gris-claro); padding: 4px 8px; border-radius: 6px; font-weight: 700; color: var(--gris-oscuro);">
+                            REF-{{ m.documento_id }}
+                        </code>
+                    </td>
+                    <td>
+                        <strong style="color: var(--verde-premium);">{{ m.producto.nombre }}</strong>
+                    </td>
+                    <td style="text-align: center;">
+                        <span style="font-weight: 950; font-size: 1.2rem; color: {{ 'var(--verde-secundario)' if m.tipo_movimiento == 'ENTRADA' else 'var(--rojo-error)' }};">
+                            {{ '+' if m.tipo_movimiento == 'ENTRADA' else '-' }}{{ m.cantidad }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-circle-user" style="color: var(--gris-medio);"></i>
+                            <span style="font-size: 0.9rem; font-weight: 600; color: var(--gris-oscuro);">{{ m.usuario.nombre if m.usuario else 'Admin' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <p style="font-size: 0.85rem; color: var(--gris-medio); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ m.observacion }}">
+                            {{ m.observacion if m.observacion else 'Procesado por sistema' }}
+                        </p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

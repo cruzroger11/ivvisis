@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Bodegas | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Administración de Bodegas</h2>
+    </div>
+    <button class="btn btn-primary" onclick="toggleForm()" id="toggle-btn">
+        <i class="fas fa-warehouse" id="toggle-icon"></i> <span id="toggle-text">Nueva Bodega</span>
+    </button>
+</div>
+
+<div id="form-wrapper" style="overflow: hidden; max-height: 0; transition: max-height 0.45s ease, opacity 0.35s ease; opacity: 0;">
+<div class="card" id="form-card" style="max-width: 600px; margin: 0 auto 2rem auto;">
+    <h3><i class="fas fa-warehouse" style="color: var(--verde-secundario);"></i> Nueva Ubicación</h3>
+    <form action="{{ url_for('bodegas') }}" method="POST">
+        <input type="hidden" name="id" id="bod-id">
+        <div class="form-group">
+            <label>Nombre de la Bodega</label>
+            <input type="text" name="nombre" required placeholder="Ej: Centro de Acopio A">
+        </div>
+        <div class="form-group">
+            <label>Ubicación / Detalle Técnico</label>
+            <textarea name="ubicacion" rows="3" placeholder="Coordenadas o referencia de planta..."></textarea>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="reset" class="btn btn-secondary">Limpiar</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> Registrar Bodega
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="card">
+    <h3><i class="fas fa-list-check"></i> Almacenes Registrados</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 35%;">Identificador</th>
+                    <th>Ubicación de Planta</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <strong style="color: var(--verde-premium); font-size: 1.05rem;">
+                            <i class="fas fa-box" style="margin-right: 10px; opacity: 0.6;"></i> {{ item.nombre }}
+                        </strong>
+                    </td>
+                    <td>
+                        <span style="color: var(--gris-medio); font-size: 0.95rem;">
+                            <i class="fas fa-map-pin" style="margin-right: 5px; color: var(--naranja-ivvi);"></i>
+                            {{ item.ubicacion if item.ubicacion else 'Sin especificar' }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <button class="btn btn-secondary" style="padding: 8px; border-radius: 8px;" title="Editar"
+                                onclick="editBod('{{ item.id }}', '{{ item.nombre }}', '{{ item.ubicacion }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <a href="{{ url_for('eliminar_entidad', tipo='bodega', id=item.id) }}" class="btn"
+                                style="padding: 8px; border-radius: 8px; color: #ef4444; border: 1px solid #fee2e2; background: #fef2f2;"
+                                onclick="return confirm('¿Eliminar esta bodega?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% block scripts %}
+<script>
+    function toggleForm(forceOpen) {
+        const wrapper = document.getElementById('form-wrapper');
+        const icon = document.getElementById('toggle-icon');
+        const text = document.getElementById('toggle-text');
+        const isOpen = wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '';
+        if (forceOpen || !isOpen) {
+            wrapper.style.maxHeight = '600px';
+            wrapper.style.opacity = '1';
+            icon.className = 'fas fa-times';
+            text.textContent = 'Cerrar';
+        } else {
+            wrapper.style.maxHeight = '0';
+            wrapper.style.opacity = '0';
+            icon.className = 'fas fa-warehouse';
+            text.textContent = 'Nueva Bodega';
+        }
+    }
+    function editBod(id, nombre, ubi) {
+        toggleForm(true);
+        document.getElementById('bod-id').value = id;
+        document.querySelector('[name="nombre"]').value = nombre;
+        document.querySelector('[name="ubicacion"]').value = ubi;
+        document.querySelector('#form-card h3').innerHTML = '<i class="fas fa-edit"></i> Editando: ' + nombre;
+    }
+</script>
+{% endblock %}
+{% endblock %}

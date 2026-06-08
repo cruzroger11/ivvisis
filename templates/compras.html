@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Ingreso de Compras | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Registro de Compras (Entradas)</h2>
+    </div>
+    <button class="btn btn-primary" onclick="toggleForm()" id="toggle-btn" style="background: linear-gradient(135deg, var(--naranja-ivvi), var(--naranja-hover));">
+        <i class="fas fa-plus" id="toggle-icon"></i> <span id="toggle-text">Nueva Orden de Compra</span>
+    </button>
+</div>
+
+<div id="form-wrapper" style="overflow: hidden; max-height: 0; transition: max-height 0.5s ease, opacity 0.4s ease; opacity: 0;">
+<div class="card">
+    <h3><i class="fas fa-file-invoice" style="color: var(--naranja-ivvi);"></i> Datos de la Orden de Compra</h3>
+    <form action="{{ url_for('compras') }}" method="POST" id="compra-form">
+        <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="form-group" style="grid-column: span 2;">
+                <label><i class="fas fa-industry"></i> Proveedor Seleccionado</label>
+                <select name="proveedor_id" id="proveedor-select" onchange="checkProvider();" required>
+                    <option value="" disabled selected>Seleccione el proveedor...</option>
+                    {% for p in proveedores %}
+                    <option value="{{ p.id }}" data-name="{{ p.razon_social | lower }}">{{ p.razon_social }} ({{ p.ruc }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label><i class="fas fa-money-bill"></i> Divisa Automática (Según Proveedor)</label>
+                <select id="moneda-select-visual" disabled style="background: var(--bg-primary); font-weight: 600; color: var(--text-main); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <option value="NIO" selected>Córdobas (C$)</option>
+                    <option value="USD">Dólares Extranjeros ($) — Oficial: C${{ conf.tasa_cambio if conf else 36.62 }}</option>
+                </select>
+                <input type="hidden" name="moneda" id="moneda-hidden" value="NIO">
+                <input type="hidden" name="tasa_cambio" id="tasa-input" value="{{ conf.tasa_cambio if conf else 36.62 }}">
+            </div>
+            
+            <div class="form-group" style="grid-column: span 2;">
+                <label><i class="fas fa-barcode"></i> Número Factura Física</label>
+                <input type="text" name="numero_factura" required placeholder="Ej. 001-002-000012345" style="padding: 0.6rem 1rem; border: 1px solid var(--border-color); border-radius: 16px; width: 100%; background: var(--bg-card); color: var(--text-main);">
+            </div>
+            
+            <div class="form-group" style="grid-column: span 2;">
+                <label><i class="far fa-calendar-alt"></i> Fecha Real de Papel</label>
+                <input type="datetime-local" name="fecha_factura" required style="padding: 0.6rem 1rem; border: 1px solid var(--border-color); border-radius: 16px; width: 100%; background: var(--bg-card); color: var(--text-main);">
+            </div>
+
+            <div class="form-group" style="grid-column: span 4;">
+                <label><i class="fas fa-warehouse"></i> Bodega Destino</label>
+                <select name="bodega_id" required>
+                    {% for b in bodegas %}
+                    <option value="{{ b.id }}" {% if loop.first %}selected{% endif %}>{{ b.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem; margin-bottom: 1rem;">
+            <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; letter-spacing: 0.1em;">Detalle de Productos</h4>
+            <div class="table-container">
+                <table id="detalle-tabla">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">Producto</th>
+                            <th style="width: 10%;">Unidad</th>
+                            <th style="width: 15%;">Cant. (TM/Und)</th>
+                            <th style="width: 20%;">Costo Unitario</th>
+                            <th style="width: 20%;">Subtotal</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="detalle-body">
+                        <tr>
+                            <td>
+                                <select name="producto_id[]" required style="padding: 0.7rem 1rem;" onchange="updateRowUnit(this)">
+                                    <option value="" selected disabled>Seleccionar producto...</option>
+                                    {% for p in productos %}
+                                    <option value="{{ p.id }}" data-factor="{{ p.factor_conversion }}" data-unidad="{{ p.unidad.abreviatura }}" data-sku="{{ p.sku }}">
+                                        {{ p.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <span class="unit-badge" style="background: var(--bg-primary); padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); border: 1px solid var(--border-color);"> - </span>
+                            </td>
+                            <td><input type="number" name="cantidad[]" class="cant-input" required min="1" value="1" oninput="calculateRow(this)" style="padding: 0.7rem 1rem;"></td>
+                            <td>
+                                <div style="position: relative; display: flex; align-items: center;">
+                                    <span class="currency-symbol" style="position: absolute; left: 12px; color: var(--text-muted); font-weight: 700;">C$</span>
+                                    <input type="number" step="0.01" name="costo[]" class="cost-input" required value="0.00" oninput="calculateRow(this)" style="padding: 0.7rem 1rem 0.7rem 3rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px;">
+                                </div>
+                            </td>
+                            <td>
+                                <input type="number" class="sub-input" readonly value="0.00" style="padding: 0.7rem 1rem; background: var(--bg-primary); font-weight: 800; color: var(--verde-premium); border: 1px solid var(--border-color); border-radius: 12px;">
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-top: 2rem; gap: 3rem;">
+            <div style="flex: 1; max-width: 400px; background: rgba(245, 158, 11, 0.05); padding: 2rem; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.2);">
+                <span style="color: var(--naranja-hover); font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">Total de Operación</span>
+                <div id="total-compra" style="font-size: 2.8rem; font-weight: 950; color: var(--naranja-ivvi); margin-bottom: 1rem;">C$0.00</div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.1rem; background: linear-gradient(135deg, var(--naranja-ivvi), var(--naranja-hover));">
+                    <i class="fas fa-download"></i> Confirmar Ingreso
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h3><i class="fas fa-history"></i> Historial Reciente de Compras</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Referencia</th>
+                    <th>Fecha / Hora</th>
+                    <th>Proveedor Asociado</th>
+                    <th>Bodega Destino</th>
+                    <th style="text-align: right;">Monto Total</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td><span class="badge" style="background: var(--verde-suave); color: var(--verde-premium);">REC-{{ "%04d" % item.id }}</span></td>
+                    <td>
+                        <span style="font-size: 0.9rem; color: var(--gris-medio);">
+                            <i class="far fa-clock"></i> {{ item.fecha.strftime('%d/%m/%Y %H:%M') }}
+                        </span>
+                    </td>
+                    <td><strong style="color: var(--verde-premium);">{{ item.proveedor.razon_social }}</strong></td>
+                    <td>
+                        <span class="badge" style="background: var(--gris-claro); border: 1px solid #e2e8f0;">
+                            <i class="fas fa-warehouse" style="font-size: 0.7rem; margin-right: 5px;"></i> {{ item.bodega.nombre }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <span style="display: block; font-weight: 900; color: var(--naranja-ivvi); font-size: 1.1rem;">
+                            {% if item.moneda == 'USD' %}${% else %}C${% endif %} {{ "{:,.2f}".format(item.total) }}
+                        </span>
+                        {% if item.moneda == 'USD' %}
+                        <small style="display: block; color: var(--gris-medio); font-size: 0.75rem;">(Eq. C$ {{ "{:,.2f}".format(item.total_base) }})</small>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <button class="btn" style="padding: 6px 10px; background: var(--verde-suave); color: var(--verde-premium); border: 1px solid rgba(5,150,105,0.1);" onclick="viewCompraDetalle({{ item.id }})" title="Ver Detalle">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if item.estado != 'Anulada' %}
+                            <form action="{{ url_for('anular_compra', id=item.id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de anular esta compra? El stock se revertirá.')">
+                                <button class="btn" style="padding: 6px 10px; background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2;" title="Anular">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="badge" style="background: #f1f5f9; color: #64748b; font-size: 0.7rem;">ANULADA</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function checkProvider() {
+        const select = document.getElementById('proveedor-select');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        if (!selectedOption) return;
+        
+        const name = (selectedOption.getAttribute('data-name') || "").toLowerCase();
+        const monedaVisual = document.getElementById('moneda-select-visual');
+        const monedaHidden = document.getElementById('moneda-hidden');
+        
+        // Auto-selección de moneda
+        if (name.includes('olmeca') || name.includes('inducaribe')) {
+            monedaVisual.value = 'USD';
+            monedaHidden.value = 'USD';
+        } else {
+            monedaVisual.value = 'NIO';
+            monedaHidden.value = 'NIO';
+        }
+        
+        // Auto-selección de producto (Solo si es la primera fila y está vacía)
+        const firstProdSelect = document.querySelector('select[name="producto_id[]"]');
+        if (firstProdSelect && firstProdSelect.selectedIndex === 0) {
+            let targetSku = "";
+            if (name.includes('olmeca')) targetSku = "ACE-PRE-BULK";
+            if (name.includes('inducaribe')) targetSku = "ACE-EST-BULK";
+            
+            if (targetSku) {
+                for (let opt of firstProdSelect.options) {
+                    if (opt.dataset.sku === targetSku) {
+                        firstProdSelect.value = opt.value;
+                        updateRowUnit(firstProdSelect);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        updateCurrencySymbol();
+    }
+
+    function updateCurrencySymbol() {
+        const sys = document.getElementById('moneda-hidden').value === 'USD' ? '$' : 'C$';
+        document.querySelectorAll('.currency-symbol').forEach(el => el.innerText = sys);
+        calculateTotal();
+    }
+
+    function updateRowUnit(select) {
+        const row = select.closest('tr');
+        const opt = select.options[select.selectedIndex];
+        const factor = parseFloat(opt.dataset.factor || 1);
+        const unitBadge = row.querySelector('.unit-badge');
+        const convInfo = row.querySelector('.conv-info');
+        
+        if (factor > 1) {
+            unitBadge.innerText = 'TM';
+            unitBadge.style.background = '#fef3c7';
+            unitBadge.style.color = '#92400e';
+        } else {
+            unitBadge.innerText = opt.dataset.unidad || '-';
+            unitBadge.style.background = '#e2e8f0';
+            unitBadge.style.color = '#475569';
+        }
+        
+        calculateRow(select);
+    }
+
+    function calculateRow(input) {
+        const row = input.closest('tr');
+        const select = row.querySelector('select');
+        const opt = select.options[select.selectedIndex];
+        const factor = parseFloat(opt.dataset.factor || 1);
+        
+        const cant = parseFloat(row.querySelector('.cant-input').value || 0);
+        const cost = parseFloat(row.querySelector('.cost-input').value || 0);
+        const subtotal = cant * cost;
+        
+        row.querySelector('.sub-input').value = subtotal.toFixed(2);
+        
+        // Mostrar info de conversión
+        let infoDiv = row.querySelector('.conv-info');
+        if (!infoDiv) {
+            const container = row.querySelector('td:nth-child(3)'); // Celda de cantidad
+            infoDiv = document.createElement('div');
+            infoDiv.className = 'conv-info';
+            infoDiv.style.fontSize = '0.75rem';
+            infoDiv.style.marginTop = '4px';
+            infoDiv.style.color = 'var(--verde-premium)';
+            infoDiv.style.fontWeight = '600';
+            container.appendChild(infoDiv);
+        }
+        
+        if (factor > 1 && cant > 0) {
+            const litros = (cant * factor).toLocaleString();
+            infoDiv.innerText = `📦 Entrarán ${litros} L a inventario`;
+        } else {
+            infoDiv.innerText = '';
+        }
+        
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        let total = 0;
+        document.querySelectorAll('.sub-input').forEach(input => {
+            total += parseFloat(input.value || 0);
+        });
+        const sys = document.getElementById('moneda-hidden').value === 'USD' ? '$' : 'C$';
+        document.getElementById('total-compra').innerText = sys + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function viewCompraDetalle(id) {
+        fetch(`/api/compras/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                let statusBadge = data.estado === 'Anulada' ? 
+                    '<span class="badge badge-danger">ANULADA</span>' : 
+                    '<span class="badge badge-success">COMPLETADA</span>';
+
+                let html = `
+                    <div style="padding: 1rem;">
+                        <h2 style="color: var(--verde-premium); margin-bottom: 0.5rem;">Detalle de Compra #${data.id}</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; background: #f8fafc; padding: 1.5rem; border-radius: 12px;">
+                            <div>
+                                <p><strong>Proveedor:</strong> ${data.proveedor}</p>
+                                <p><strong>Factura:</strong> ${data.factura || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p><strong>Fecha:</strong> ${data.fecha}</p>
+                                <p><strong>Estado:</strong> ${statusBadge}</p>
+                            </div>
+                        </div>
+
+                        <table class="table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--gris-claro);">
+                                    <th style="text-align: left; padding: 12px;">Producto</th>
+                                    <th style="text-align: center; padding: 12px;">Cantidad</th>
+                                    <th style="text-align: right; padding: 12px;">Costo Unit.</th>
+                                    <th style="text-align: right; padding: 12px;">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.detalles.map(d => `
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 12px;">
+                                            <strong>${d.producto}</strong><br>
+                                            <small style="color: var(--gris-medio)">${d.sku}</small>
+                                        </td>
+                                        <td style="text-align: center; padding: 12px;">${d.cantidad} ${d.unidad}</td>
+                                        <td style="text-align: right; padding: 12px;">${data.moneda === 'USD' ? '$' : 'C$'} ${parseFloat(d.costo_unitario).toFixed(4)}</td>
+                                        <td style="text-align: right; padding: 12px; font-weight: 700; color: var(--verde-premium);">${data.moneda === 'USD' ? '$' : 'C$'} ${parseFloat(d.subtotal).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+
+                        <div style="margin-top: 2rem; text-align: right; padding: 1.5rem; background: var(--verde-suave); border-radius: 12px;">
+                            <span style="font-size: 1.1rem; color: var(--verde-premium); font-weight: 800;">TOTAL DOCUMENTO: ${data.moneda === 'USD' ? '$' : 'C$'} ${parseFloat(data.total).toFixed(2)}</span>
+                        </div>
+                        
+                        <div style="margin-top: 2rem; display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+                            ${data.estado !== 'Anulada' ? `
+                                <button class="btn" style="background: var(--naranja-ivvi); color: white;" onclick="editCompra(${data.id})">
+                                    <i class="fas fa-edit"></i> Editar (Anular y Corregir)
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                openModal(html);
+            });
+    }
+
+    function editCompra(id) {
+        if (!confirm('Esta acción anulará la compra actual y cargará los datos para una nueva corrección. ¿Continuar?')) return;
+        
+        fetch(`/api/compras/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/compras/${id}/anular`;
+                document.body.appendChild(form);
+                form.submit();
+            });
+    }
+
+    function toggleForm(forceOpen) {
+        const wrapper = document.getElementById('form-wrapper');
+        const icon = document.getElementById('toggle-icon');
+        const text = document.getElementById('toggle-text');
+        const isOpen = wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '';
+        if (forceOpen || !isOpen) {
+            wrapper.style.maxHeight = '1200px';
+            wrapper.style.opacity = '1';
+            icon.className = 'fas fa-times';
+            text.textContent = 'Cerrar';
+        } else {
+            wrapper.style.maxHeight = '0';
+            wrapper.style.opacity = '0';
+            icon.className = 'fas fa-plus';
+            text.textContent = 'Nueva Orden de Compra';
+        }
+    }
+</script>
+{% endblock %}

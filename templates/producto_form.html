@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if p else 'Nuevo' }} Material | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>{{ 'Editar' if p else 'Añadir Nuevo' }} Registro Maestro</h2>
+    </div>
+    <a href="{{ url_for('productos') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver al Catálogo
+    </a>
+</div>
+
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+    <h3><i class="fas fa-edit"></i> Ficha Técnica del Producto/Insumo</h3>
+    <form action="{{ url_for('gestion_producto') }}" method="POST">
+        {% if p %}
+        <input type="hidden" name="id" value="{{ p.id }}">
+        {% endif %}
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label><i class="fas fa-barcode"></i> SKU / Código Único</label>
+                <input type="text" name="sku" required placeholder="Ej: P-001" value="{{ p.sku if p else '' }}">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-signature"></i> Nombre del Producto</label>
+                <input type="text" name="nombre" required placeholder="Ej: Aceite Crudo 19L" value="{{ p.nombre if p else '' }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-align-left"></i> Descripción Conjunta</label>
+            <textarea name="descripcion" rows="3" placeholder="Especificaciones técnicas del producto...">{{ p.descripcion if p else '' }}</textarea>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label><i class="fas fa-layer-group"></i> Categoría de {{ 'Venta' if tipo == 'venta' else 'Planta' }}</label>
+                <select name="categoria_id" required>
+                    <option value="" disabled {{ 'selected' if not p else '' }}>Seleccione una categoría</option>
+                    {% for c in categorias %}
+                        {% if tipo == 'venta' and c.nombre == 'Producto Terminado' %}
+                            <option value="{{ c.id }}" {{ 'selected' if p and p.categoria_id == c.id else '' }}>{{ c.nombre }}</option>
+                        {% elif tipo == 'planta' and c.nombre != 'Producto Terminado' %}
+                            <option value="{{ c.id }}" {{ 'selected' if p and p.categoria_id == c.id else '' }}>{{ c.nombre }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-weight-hanging"></i> Unidad de Medida</label>
+                <select name="unidad_id" required>
+                    <option value="" disabled {{ 'selected' if not p else '' }}>Seleccione unidad</option>
+                    {% for u in unidades %}
+                    <option value="{{ u.id }}" {{ 'selected' if p and p.unidad_id == u.id else '' }}>{{ u.nombre }} ({{ u.abreviatura }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            {% if tipo == 'venta' %}
+            <div class="form-group">
+                <label><i class="fas fa-dollar-sign"></i> Precio de Venta Público</label>
+                <input type="number" step="0.01" name="precio" required value="{{ p.precio_venta if p else '0.00' }}">
+            </div>
+            {% else %}
+            <!-- El backend espera un precio numérico, enviamos 0 oculto -->
+            <input type="hidden" name="precio" value="0.00">
+            {% endif %}
+            
+            <div class="form-group">
+                <label><i class="fas fa-bell"></i> Stock Mínimo (Alerta de Bodega)</label>
+                <input type="number" name="stock_minimo" required value="{{ p.stock_minimo if p else '5' }}">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 2rem;">
+            <button type="reset" class="btn btn-secondary">Limpiar Campos</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar en Maestro
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

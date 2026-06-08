@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Clientes | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Gestión de Clientes</h2>
+    </div>
+    <button class="btn btn-primary" onclick="toggleForm()" id="toggle-btn">
+        <i class="fas fa-plus" id="toggle-icon"></i> <span id="toggle-text">Registrar Cliente</span>
+    </button>
+</div>
+
+<div id="form-wrapper" style="overflow: hidden; max-height: 0; transition: max-height 0.45s ease, opacity 0.35s ease; opacity: 0;">
+<div class="card" id="form-card" style="max-width: 900px; margin: 0 auto 3rem auto;">
+    <h3><i class="fas fa-user-plus"></i> Registro de Cliente</h3>
+    <form action="{{ url_for('clientes') }}" method="POST">
+        <input type="hidden" name="id" id="cli-id">
+        <div class="form-grid">
+            <div class="form-group">
+                <label><i class="fas fa-building"></i> Nombre o Razón Social</label>
+                <input type="text" name="nombre" required placeholder="Ej: Distribuidora Central S.A.">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-id-card"></i> RUC / ID Fiscal</label>
+                <input type="text" name="ruc" required placeholder="Ej: J031000000000">
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label><i class="fas fa-phone"></i> Teléfono Directo</label>
+                <input type="text" name="telefono" required placeholder="Ej: +505 8888 8888">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
+                <input type="email" name="email" required placeholder="Ej: contacto@cliente.com">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> Dirección de Entrega y Facturación</label>
+            <input type="text" name="direccion" required placeholder="Ej: Km 12 Carretera Norte, Managua">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 1rem;">
+            <button type="reset" class="btn btn-secondary">Limpiar</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar Cliente
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente / Razón Social</th>
+                    <th>Identificación</th>
+                    <th>Información de Contacto</th>
+                    <th>Estado Operativo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <div style="display: flex; flex-direction: column;">
+                            <strong style="color: var(--verde-premium); font-size: 1.1rem;">{{ item.nombre }}</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">
+                                <i class="fas fa-location-dot"></i> 
+                                {% if item.direccion %}
+                                    {{ item.direccion[:40] }}{% if item.direccion|length > 40 %}...{% endif %}
+                                {% else %}
+                                    Sin dirección registrada
+                                {% endif %}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge" style="background: var(--bg-primary); color: var(--text-main); border: 1px solid var(--border-color);">
+                            {{ item.ruc }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-main);">
+                                <i class="fas fa-phone" style="width: 20px; color: var(--verde-secundario); font-size: 0.8rem;"></i> {{ item.telefono }}
+                            </span>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">
+                                <i class="fas fa-envelope" style="width: 20px; color: var(--verde-secundario); font-size: 0.8rem;"></i> {{ item.email }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-success">Activo</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" style="padding: 10px; border-radius: 12px;" title="Editar Perfil"
+                                onclick="editCli('{{ item.id }}', '{{ item.nombre }}', '{{ item.ruc }}', '{{ item.telefono }}', '{{ item.email }}', '{{ item.direccion }}')">
+                                <i class="fas fa-user-pen"></i>
+                            </button>
+                            <a href="{{ url_for('eliminar_entidad', tipo='cliente', id=item.id) }}" class="btn" 
+                                style="padding: 10px; border-radius: 12px; color: var(--rojo-error); border: 1px solid var(--rojo-suave); background: var(--rojo-suave);"
+                                onclick="return confirm('¿Eliminar registro de este cliente?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% block scripts %}
+<script>
+    function toggleForm(forceOpen) {
+        const wrapper = document.getElementById('form-wrapper');
+        const icon = document.getElementById('toggle-icon');
+        const text = document.getElementById('toggle-text');
+        const isOpen = wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '';
+        if (forceOpen || !isOpen) {
+            wrapper.style.maxHeight = '900px';
+            wrapper.style.opacity = '1';
+            icon.className = 'fas fa-times';
+            text.textContent = 'Cerrar';
+            if (forceOpen) setTimeout(() => wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+        } else {
+            wrapper.style.maxHeight = '0';
+            wrapper.style.opacity = '0';
+            icon.className = 'fas fa-plus';
+            text.textContent = 'Registrar Cliente';
+        }
+    }
+    function editCli(id, nombre, ruc, tel, email, dir) {
+        toggleForm(true);
+        document.getElementById('cli-id').value = id;
+        document.querySelector('[name="nombre"]').value = nombre;
+        document.querySelector('[name="ruc"]').value = ruc;
+        document.querySelector('[name="telefono"]').value = tel;
+        document.querySelector('[name="email"]').value = email;
+        document.querySelector('[name="direccion"]').value = dir;
+        document.querySelector('#form-card h3').innerHTML = '<i class="fas fa-edit"></i> Editando Cliente: ' + nombre;
+    }
+</script>
+{% endblock %}
+{% endblock %}

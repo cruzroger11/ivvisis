@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Empleados | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Recursos Humanos Operativos</h2>
+    </div>
+    <button class="btn btn-primary" onclick="toggleForm()" id="toggle-btn">
+        <i class="fas fa-user-plus" id="toggle-icon"></i> <span id="toggle-text">Nuevo Empleado</span>
+    </button>
+</div>
+
+<div id="form-wrapper" style="overflow: hidden; max-height: 0; transition: max-height 0.45s ease, opacity 0.35s ease; opacity: 0;">
+<div class="card" id="form-card" style="max-width: 600px; margin: 0 auto 2rem auto;">
+    <h3><i class="fas fa-id-card-clip" style="color: var(--verde-secundario);"></i> Nuevo Registro</h3>
+    <form action="{{ url_for('empleados') }}" method="POST">
+        <input type="hidden" name="id" id="emp-id">
+        <div class="form-group">
+            <label>Nombre del Colaborador</label>
+            <input type="text" name="nombre" required placeholder="Nombre y Apellido">
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Cargo / Responsabilidad</label>
+                <input type="text" name="cargo" required placeholder="Ej: Jefe de Almacén">
+            </div>
+            <div class="form-group">
+                <label>Teléfono de Contacto</label>
+                <input type="text" name="telefono" required placeholder="Ej: +505 0000 0000">
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="reset" class="btn btn-secondary">Limpiar</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Dar de Alta
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="card">
+    <h3><i class="fas fa-users-gear"></i> Plantilla Activa</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 35%;">Colaborador</th>
+                    <th>Posición / Cargo</th>
+                    <th>Estado</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <strong style="color: var(--verde-premium); font-size: 1.05rem;">{{ item.nombre }}</strong>
+                            <span style="font-size: 0.8rem; color: var(--gris-medio);">
+                                <i class="fas fa-phone-flip" style="font-size: 0.7rem; margin-right: 5px;"></i> {{ item.telefono }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge" style="background: var(--gris-claro); color: var(--gris-oscuro); border: 1px solid #e2e8f0; padding: 5px 12px;">
+                            <i class="fas fa-briefcase" style="font-size: 0.75rem; margin-right: 6px; opacity: 0.6;"></i> {{ item.cargo }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-success">Activo</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <button class="btn btn-secondary" style="padding: 8px; border-radius: 8px;" title="Editar"
+                                onclick="editEmp('{{ item.id }}', '{{ item.nombre }}', '{{ item.cargo }}', '{{ item.telefono }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <a href="{{ url_for('eliminar_entidad', tipo='empleado', id=item.id) }}" class="btn"
+                                style="padding: 8px; border-radius: 8px; color: #ef4444; border: 1px solid #fee2e2; background: #fef2f2;"
+                                onclick="return confirm('¿Dar de baja a este empleado?')">
+                                <i class="fas fa-trash-can"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% block scripts %}
+<script>
+    function toggleForm(forceOpen) {
+        const wrapper = document.getElementById('form-wrapper');
+        const icon = document.getElementById('toggle-icon');
+        const text = document.getElementById('toggle-text');
+        const isOpen = wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '';
+        if (forceOpen || !isOpen) {
+            wrapper.style.maxHeight = '600px';
+            wrapper.style.opacity = '1';
+            icon.className = 'fas fa-times';
+            text.textContent = 'Cerrar';
+        } else {
+            wrapper.style.maxHeight = '0';
+            wrapper.style.opacity = '0';
+            icon.className = 'fas fa-user-plus';
+            text.textContent = 'Nuevo Empleado';
+        }
+    }
+    function editEmp(id, nombre, cargo, tel) {
+        toggleForm(true);
+        document.getElementById('emp-id').value = id;
+        document.querySelector('[name="nombre"]').value = nombre;
+        document.querySelector('[name="cargo"]').value = cargo;
+        document.querySelector('[name="telefono"]').value = tel;
+        document.querySelector('#form-card h3').innerHTML = '<i class="fas fa-edit"></i> Editando: ' + nombre;
+    }
+</script>
+{% endblock %}
+{% endblock %}

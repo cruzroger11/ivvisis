@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Seguro | IVVI S.A.</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --brand-primary: #059669;
+            --brand-dark: #064e3b;
+            --brand-light: #ecfdf5;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow-soft: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #ffffff 0%, #f0fdf4 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        /* Ambient Background Background */
+        .page-background {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(at 100% 0%, rgba(5, 150, 105, 0.05) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(5, 150, 105, 0.02) 0px, transparent 50%);
+            z-index: -1;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            padding: 3.5rem 3rem;
+            border-radius: 32px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .brand-logo {
+            max-height: 85px;
+            margin-bottom: 1.5rem;
+        }
+
+        .brand-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 800;
+            margin: 0;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .brand-header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.4rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-left: 4px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .login-card input::placeholder {
+            color: #cbd5e1;
+        }
+
+        .login-card input:focus {
+            outline: none;
+            background: #ffffff;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.08);
+        }
+
+        .login-card input:focus + i {
+            color: var(--brand-primary);
+        }
+
+        /* Alerts */
+        .alert-toast {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            color: #be123c;
+            padding: 1rem;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 2rem;
+        }
+
+        /* Button */
+        .btn-submit {
+            width: 100%;
+            height: 56px;
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.2);
+        }
+
+        .btn-submit:hover {
+            background: var(--brand-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(5, 150, 105, 0.2);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Footer */
+        .login-footer {
+            margin-top: 2.5rem;
+            text-align: center;
+        }
+
+        .login-footer p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .footer-line {
+            width: 50px;
+            height: 2px;
+            background: var(--brand-light);
+            margin: 1.2rem auto;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 2.5rem 1.5rem;
+            }
+            .brand-header h1 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-background"></div>
+
+    <div class="login-container">
+        <main class="login-card">
+            <div class="brand-header">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="IVVI Logo" class="brand-logo">
+                <h1>Bienvenido</h1>
+                <p>Sistema de Gestión IVVI S.A.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-toast">
+                            <i class="fas fa-circle-exclamation"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('auth.login') }}" method="POST">
+                <div class="form-group">
+                    <label for="email">Credencial Digital</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="email" name="email" required placeholder="tu.correo@ivvi.com" autocomplete="email">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Clave de Acceso</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password" required placeholder="••••••••••••" autocomplete="current-password">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <span>Acceder al Sistema</span>
+                    <i class="fas fa-arrow-right-to-bracket"></i>
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <div class="footer-line"></div>
+                <p>&copy; 2026 IVVI S.A. | Planta El Naranjo</p>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Ajustes de Inventario | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Control de Envases y Ajustes</h2>
+        <p style="color: var(--gris-medio); font-size: 0.9rem;">Gestión de retornos de clientes y mermas por daño físico.</p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem;">
+    <!-- Formulario de Ajuste -->
+    <div class="card" style="height: fit-content;">
+        <h3><i class="fas fa-clipboard-check" style="color: var(--verde-secundario);"></i> Registrar Movimiento</h3>
+        <form action="{{ url_for('ajuste_inventario') }}" method="POST">
+            <div class="form-group">
+                <label><i class="fas fa-box-open"></i> Activo bajo Control</label>
+                <div class="static-product-info" style="background: var(--verde-suave); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--verde-secundario); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: var(--verde-premium);">
+                        <i class="fas fa-wine-bottle" style="margin-right: 8px;"></i>
+                        {{ bidon.nombre if bidon else 'Bidón 19L (Vacío)' }}
+                    </span>
+                    <span class="badge badge-success" style="font-size: 0.85rem;">
+                        Stock Actual: {{ bidon.stock_actual if bidon else '0' }}
+                    </span>
+                </div>
+                <!-- Campo oculto para procesar la transacción -->
+                <input type="hidden" name="producto_id" value="{{ bidon.id if bidon else '' }}">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-right-left"></i> Tipo de Movimiento</label>
+                <div style="display: flex; gap: 15px; margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="radio" name="tipo_movimiento" value="ENTRADA" checked>
+                        <span class="badge badge-success">Entrada (Retorno)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="radio" name="tipo_movimiento" value="SALIDA">
+                        <span class="badge badge-danger">Salida (Descarte)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-calculator"></i> Cantidad Física</label>
+                <input type="number" name="cantidad" min="1" required placeholder="Ej: 20">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-comment-dots"></i> Observación / Motivo</label>
+                <textarea name="observacion" rows="3" required placeholder="Ej: Retorno de cliente X / Bidones quebrados en inspección..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-save"></i> Procesar Ajuste
+            </button>
+        </form>
+    </div>
+
+    <!-- Guía de Procedimiento -->
+    <div class="card">
+        <h3><i class="fas fa-info-circle"></i> Protocolo de Inspección</h3>
+        <div style="background: rgba(245, 158, 11, 0.05); border-left: 4px solid var(--naranja-ivvi); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+            <h4 style="color: var(--naranja-ivvi); margin-bottom: 10px;"><i class="fas fa-triangle-exclamation"></i> Importante:</h4>
+            <p style="font-size: 0.95rem; color: var(--gris-oscuro); line-height: 1.6;">
+                Antes de registrar un retorno, verifique las condiciones físicas del bidón. Solo los bidones con integridad estructural y tapas completas deben registrarse como <strong>Entrada</strong> para su posterior saneamiento. Los dañados deben registrarse como <strong>Salida (Descarte)</strong> para justificar compras de reposición.
+            </p>
+        </div>
+
+        <div class="table-container">
+            <h4 style="margin-bottom: 1rem; color: var(--verde-premium);">Últimos Ajustes Manuales</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cant.</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aj in ajustes_recientes %}
+                    <tr>
+                        <td style="font-weight: 600; color: var(--negro-profundo);">{{ aj.producto.nombre }}</td>
+                        <td>
+                            <span class="badge {{ 'badge-success' if aj.tipo_movimiento == 'ENTRADA' else 'badge-danger' }}">
+                                {{ aj.tipo_movimiento }}
+                            </span>
+                        </td>
+                        <td style="text-align: center; font-weight: 700;">{{ aj.cantidad }}</td>
+                        <td style="font-size: 0.85rem; color: var(--gris-medio);">{{ aj.observacion }}</td>
+                    </tr>
+                    {% else %}
+                    <tr style="opacity: 0.6; font-style: italic;">
+                        <td colspan="4" style="text-align: center; padding: 2rem;">No hay ajustes manuales recientes. Consulte el Kardex para el historial completo.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

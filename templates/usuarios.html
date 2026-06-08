@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Administración de Usuarios | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Control de Accesos y Usuarios</h2>
+    </div>
+    <button class="btn btn-primary" onclick="toggleForm()" id="toggle-btn">
+        <i class="fas fa-user-plus" id="toggle-icon"></i> <span id="toggle-text">Nuevo Usuario</span>
+    </button>
+</div>
+
+<div id="form-wrapper" style="overflow: hidden; max-height: 0; transition: max-height 0.45s ease, opacity 0.35s ease; opacity: 0;">
+<div class="card" id="form-card" style="max-width: 800px; margin: 0 auto 3rem auto;">
+    <h3><i class="fas fa-user-shield"></i> Registro de Seguridad</h3>
+    <form action="{{ url_for('usuarios') }}" method="POST">
+        <input type="hidden" name="id" id="usr-id">
+        <div class="form-group">
+            <label><i class="fas fa-user-tie"></i> Nombre Completo del Operario</label>
+            <input type="text" name="nombre" required placeholder="Ej: Ing. Roberto Mendoza">
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label><i class="fas fa-envelope-shield"></i> Email Institucional</label>
+                <input type="email" name="email" required placeholder="Ej: r.mendoza@ivvi.com">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-id-badge"></i> Rol Jerárquico</label>
+                <select name="rol" required>
+                    <option value="" disabled selected>Asignar nivel de acceso</option>
+                    <option value="Administrador">Administrador de Sistema</option>
+                    <option value="Operador de Almacén">Operador de Logística</option>
+                    <option value="Vendedor">Ejecutivo Comercial</option>
+                    <option value="Gerencia">Gerencia de Planta</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-key"></i> Contraseña de Acceso Industrial</label>
+            <input type="password" name="password" id="usr-pass" required placeholder="••••••••••••">
+            <small style="color: var(--gris-medio); display: block; margin-top: 5px;">* Dejar en blanco para no cambiar en modo edición.</small>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 1rem;">
+            <button type="reset" class="btn btn-secondary">Limpiar</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-shield-halved"></i> Autorizar Creación
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre de Usuario</th>
+                    <th>Credencial / Email</th>
+                    <th>Nivel de Acceso</th>
+                    <th>Estado de Cuenta</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; background: var(--verde-suave); color: var(--verde-premium); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                {{ item.nombre[:1] if item.nombre else 'U' }}
+                            </div>
+                            <strong style="color: var(--verde-premium); font-size: 1.05rem;">{{ item.nombre }}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="color: var(--text-muted); font-size: 0.95rem;">
+                            <i class="far fa-envelope-open" style="margin-right: 5px;"></i> {{ item.email }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge" style="background: var(--verde-premium); color: white; padding: 6px 14px; border-radius: 8px;">
+                            <i class="fas fa-crown" style="font-size: 0.7rem; margin-right: 5px;"></i> {{ item.rol }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-success">Activo</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" style="padding: 10px; border-radius: 12px;" title="Editar Usuario"
+                                onclick="editUsr('{{ item.id }}', '{{ item.nombre }}', '{{ item.email }}', '{{ item.rol }}')">
+                                <i class="fas fa-user-gear"></i>
+                            </button>
+                            {% if item.email != 'admin@ivvi.com' %}
+                            <a href="{{ url_for('eliminar_entidad', tipo='usuario', id=item.id) }}" class="btn" 
+                                style="padding: 10px; border-radius: 12px; color: var(--rojo-error); border: 1px solid var(--rojo-suave); background: var(--rojo-suave);"
+                                onclick="return confirm('¿Eliminar cuenta de este usuario?')">
+                                <i class="fas fa-user-xmark"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% block scripts %}
+<script>
+    function toggleForm(forceOpen) {
+        const wrapper = document.getElementById('form-wrapper');
+        const icon = document.getElementById('toggle-icon');
+        const text = document.getElementById('toggle-text');
+        const isOpen = wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '';
+        if (forceOpen || !isOpen) {
+            wrapper.style.maxHeight = '800px';
+            wrapper.style.opacity = '1';
+            icon.className = 'fas fa-times';
+            text.textContent = 'Cerrar';
+            if (forceOpen) setTimeout(() => wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+        } else {
+            wrapper.style.maxHeight = '0';
+            wrapper.style.opacity = '0';
+            icon.className = 'fas fa-user-plus';
+            text.textContent = 'Nuevo Usuario';
+        }
+    }
+    function editUsr(id, nombre, email, rol) {
+        toggleForm(true);
+        document.getElementById('usr-id').value = id;
+        document.querySelector('[name="nombre"]').value = nombre;
+        document.querySelector('[name="email"]').value = email;
+        document.querySelector('[name="rol"]').value = rol;
+        document.getElementById('usr-pass').removeAttribute('required');
+        document.querySelector('#form-card h3').innerHTML = '<i class="fas fa-edit"></i> Editando Usuario: ' + nombre;
+    }
+</script>
+{% endblock %}
+{% endblock %}

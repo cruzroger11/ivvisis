@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Ejecutivo | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2 style="font-weight: 800; letter-spacing: -0.5px; color: var(--verde-premium);">Panel de Control Ejecutivo</h2>
+        <p style="color: var(--gris-medio); font-size: 0.9rem; margin-top: 4px;">Monitoreo de rendimiento industrial en tiempo real</p>
+    </div>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <div style="text-align: right;">
+            <span class="badge badge-success" style="padding: 6px 12px;"><i class="fas fa-circle" style="font-size: 0.6rem; animation: pulse 2s infinite;"></i> SISTEMA ACTIVO</span>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; font-weight: 600;">ACTUALIZADO: {{ now.strftime('%H:%M:%S') if now else '' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI GRID PREMIUM -->
+<div class="dashboard-grid" style="margin-bottom: 2.5rem;">
+    <!-- Ventas -->
+    <div class="kpi-card" style="background: linear-gradient(135deg, #059669 0%, #065f46 100%); color: white; border: none; overflow: hidden;">
+        <div style="position: relative; z-index: 1;">
+            <div style="opacity: 0.8; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Ingresos (Mes)</div>
+            <div style="font-size: 1.8rem; font-weight: 900; margin: 10px 0;">C$ {{ "{:,.2f}".format(vm) }}</div>
+            <div style="font-size: 0.75rem;"><i class="fas fa-arrow-up"></i> Tendencia Positiva</div>
+        </div>
+        <i class="fas fa-sack-dollar" style="position: absolute; right: -10px; bottom: -10px; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg);"></i>
+    </div>
+
+    <!-- Compras -->
+    <div class="kpi-card" style="background: var(--bg-card); border-left: 5px solid var(--naranja-ivvi); color: var(--text-main); backdrop-filter: blur(10px); border-radius: 24px;">
+        <div style="opacity: 0.8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Egresos (Mes)</div>
+        <div style="font-size: 1.8rem; font-weight: 900; margin: 10px 0; color: var(--naranja-ivvi);">C$ {{ "{:,.2f}".format(cm) }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">{{ compras|length if compras else 0 }} compras hoy</div>
+    </div>
+
+    <!-- Valor Inventario -->
+    <div class="kpi-card" style="background: var(--bg-card); border-left: 5px solid #6366f1; color: var(--text-main); backdrop-filter: blur(10px); border-radius: 24px;">
+        <div style="opacity: 0.8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Valor en Bodega</div>
+        <div style="font-size: 1.8rem; font-weight: 900; margin: 10px 0; color: #6366f1;">C$ {{ "{:,.2f}".format(valor_inv) }}</div>
+        <button class="btn" style="padding: 4px 12px; font-size: 0.7rem; background: rgba(99, 102, 241, 0.1); color: #6366f1; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2);" onclick="viewValorizacion()">Ver Detalle</button>
+    </div>
+
+    <!-- Alertas -->
+    <div class="kpi-card" style="background: var(--bg-card); border-left: 5px solid var(--rojo-error); color: var(--text-main); backdrop-filter: blur(10px); border-radius: 24px;">
+        <div style="opacity: 0.8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Stock Crítico</div>
+        <div style="font-size: 1.8rem; font-weight: 900; margin: 10px 0; color: var(--rojo-error);">{{ bajo_stock|length }}</div>
+        <div style="font-size: 0.75rem; color: var(--rojo-error); font-weight: 700;">{{ 'Atención Inmediata' if bajo_stock else 'Estado Óptimo' }}</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 2rem;">
+    <!-- COLUMNA IZQUIERDA: GRÁFICO PRINCIPAL -->
+    <div class="card" style="padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.25rem;"><i class="fas fa-chart-line" style="color: var(--verde-premium); margin-right: 10px;"></i> Tendencia de Operaciones</h3>
+                <p style="color: var(--gris-medio); font-size: 0.8rem;">Últimos 15 días de actividad comercial</p>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <span style="display: flex; align-items: center; font-size: 0.7rem; color: var(--text-muted);"><span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px; margin-right: 5px;"></span> Ventas</span>
+                <span style="display: flex; align-items: center; font-size: 0.7rem; color: var(--text-muted); padding-left: 10px;"><span style="width: 10px; height: 10px; background: #fb923c; border-radius: 2px; margin-right: 5px;"></span> Compras</span>
+            </div>
+        </div>
+        <div style="height: 350px;">
+            <canvas id="mainTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: DISTRIBUCIÓN Y ACCESOS -->
+    <div style="display: flex; flex-direction: column; gap: 2rem;">
+        <div class="card" style="padding: 1.5rem;">
+            <h3 style="font-size: 1rem; margin-bottom: 1.5rem;"><i class="fas fa-chart-pie" style="color: #6366f1;"></i> Mix de Inventario</h3>
+            <div style="height: 200px; position: relative;">
+                <canvas id="stockDistChart"></canvas>
+            </div>
+            <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 0.75rem;">
+                <div style="text-align: center;"><strong style="display: block; color: #6366f1;">{{ stock_premium }} L</strong> Premium</div>
+                <div style="text-align: center;"><strong style="display: block; color: #818cf8;">{{ stock_estandar }} L</strong> Estándar</div>
+                <div style="text-align: center;"><strong style="display: block; color: #10b981;">{{ stock_pt }} U</strong> Envasado</div>
+            </div>
+        </div>
+
+        <!-- ACCESOS RÁPIDOS -->
+        <div class="card" style="padding: 1.5rem; background: var(--verde-suave);">
+            <h3 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--verde-premium);">Accesos Rápidos</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <a href="/ventas" class="btn" style="background: var(--bg-card); border: 1px solid var(--border-color); font-size: 0.75rem; display: flex; align-items: center; gap: 8px; justify-content: center; height: 40px; color: var(--text-main);">
+                    <i class="fas fa-cart-plus" style="color: #10b981;"></i> Nueva Venta
+                </a>
+                <a href="/compras" class="btn" style="background: var(--bg-card); border: 1px solid var(--border-color); font-size: 0.75rem; display: flex; align-items: center; gap: 8px; justify-content: center; height: 40px; color: var(--text-main);">
+                    <i class="fas fa-truck-loading" style="color: #f59e0b;"></i> Nueva Compra
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 2rem; margin-top: 2rem;">
+    <!-- ÚLTIMOS DESPACHOS -->
+    <div class="card">
+        <div style="padding: 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 1.1rem;"><i class="fas fa-history" style="opacity: 0.5;"></i> Últimos Despachos</h3>
+            <a href="/ventas" style="font-size: 0.8rem; color: var(--verde-premium); font-weight: 600;">Ver Todos <i class="fas fa-chevron-right" style="font-size: 0.7rem;"></i></a>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th style="text-align: right;">Monto</th>
+                        <th style="text-align: center;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in ventas %}
+                    <tr>
+                        <td>{{ v.fecha.strftime('%d/%m/%Y') }}</td>
+                        <td><strong style="color: var(--verde-premium);">{{ v.cliente.nombre }}</strong></td>
+                        <td style="text-align: right; font-weight: 700;">C$ {{ "{:,.2f}".format(v.total) }}</td>
+                        <td style="text-align: center;">
+                            <span class="badge" style="background: {{ '#f1f5f9' if v.estado == 'Anulada' else 'var(--verde-suave)' }}; color: {{ '#64748b' if v.estado == 'Anulada' else 'var(--verde-premium)' }};">
+                                {{ v.estado }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ALERTAS DE STOCK -->
+    <div class="card">
+        <div style="padding: 1.5rem; border-bottom: 2px solid var(--rojo-suave);">
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--rojo-error);"><i class="fas fa-bell"></i> ALERTAS CRÍTICAS</h3>
+        </div>
+        <div style="padding: 1rem;">
+            {% for p in bajo_stock %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--rojo-suave); border: 1px solid var(--rojo-suave); border-radius: 12px; margin-bottom: 8px;">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">{{ p.nombre }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Mínimo: {{ p.stock_minimo }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="color: #ef4444; font-weight: 800;">{{ p.stock_actual }}</div>
+                    <div style="font-size: 0.6rem; text-transform: uppercase; font-weight: 700; opacity: 0.5;">Saldo Actual</div>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 2rem; opacity: 0.3;">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                <p>No hay alertas activas</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // --- CONFIGURACIÓN DE COLORES DINÁMICOS ---
+    const getThemeColors = () => {
+        const theme = document.documentElement.getAttribute('data-theme');
+        return {
+            grid: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+            ticks: theme === 'dark' ? '#94a3b8' : '#64748b',
+            tooltipBg: theme === 'dark' ? '#1e293b' : '#0f172a'
+        };
+    };
+
+    let mainTrendChart, stockDistChart;
+
+    function initCharts() {
+        const colors = getThemeColors();
+        
+        // --- GRÁFICO TENDENCIA (Líneas) ---
+        const ctxTrend = document.getElementById('mainTrendChart').getContext('2d');
+        if (mainTrendChart) mainTrendChart.destroy();
+        mainTrendChart = new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: {{ labels_grafico|tojson }},
+                datasets: [
+                    {
+                        label: 'Ventas C$',
+                        data: {{ ventas_grafico|tojson }},
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#10b981'
+                    },
+                    {
+                        label: 'Compras C$',
+                        data: {{ compras_grafico|tojson }},
+                        borderColor: '#fb923c',
+                        backgroundColor: 'rgba(251, 146, 60, 0.05)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fb923c'
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { 
+                        backgroundColor: colors.tooltipBg,
+                        padding: 12,
+                        cornerRadius: 8,
+                        bodyFont: { weight: 'bold', family: 'Inter' } 
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: colors.grid },
+                        ticks: { font: { weight: 'bold', family: 'Inter' }, color: colors.ticks }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { weight: 'bold', family: 'Inter' }, color: colors.ticks }
+                    }
+                }
+            }
+        });
+
+        // --- GRÁFICO MIX STOCK (Doughnut) ---
+        const ctxDist = document.getElementById('stockDistChart').getContext('2d');
+        if (stockDistChart) stockDistChart.destroy();
+        stockDistChart = new Chart(ctxDist, {
+            type: 'doughnut',
+            data: {
+                labels: ['Aceite Premium (L)', 'Aceite Estándar (L)', 'Producto Terminado (U)'],
+                datasets: [{
+                    data: [{{ stock_premium }}, {{ stock_estandar }}, {{ stock_pt }}],
+                    backgroundColor: ['#6366f1', '#818cf8', '#10b981'],
+                    hoverOffset: 10,
+                    borderWidth: 0,
+                    cutout: '75%'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Inicializar y escuchar cambios de tema
+    initCharts();
+    window.addEventListener('themeChanged', initCharts);
+
+    // --- VALORIZACIÓN DETALLADA ---
+    function viewValorizacion() {
+        fetch('/api/inventario/valorizacion')
+            .then(res => res.json())
+            .then(data => {
+                let html = `
+                    <div style="padding: 1rem;">
+                        <h2 style="color: var(--verde-premium); margin-bottom: 1.5rem;">Auditoría de Valor en Bodega</h2>
+                        <div style="background: var(--bg-primary); padding: 1rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid var(--border-color);">
+                            <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">VALOR TOTAL CALCULADO</span>
+                            <div style="font-size: 2rem; font-weight: 900; color: var(--verde-premium);">C$ ${data.total_general.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">* Basado en el último costo de compra de cada producto.</p>
+                        </div>
+
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <table class="table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid var(--border-color); position: sticky; top: 0; background: var(--bg-primary); z-index: 10;">
+                                        <th style="text-align: left; padding: 12px;">Producto</th>
+                                        <th style="text-align: center; padding: 12px;">Stock</th>
+                                        <th style="text-align: right; padding: 12px;">Costo (C$)</th>
+                                        <th style="text-align: right; padding: 12px;">Subtotal (C$)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.items.map(i => `
+                                        <tr style="border-bottom: 1px solid var(--border-color);">
+                                            <td style="padding: 12px;">
+                                                <strong style="color: var(--text-main)">${i.producto}</strong><br>
+                                                <small style="color: var(--text-muted)">${i.sku}</small>
+                                            </td>
+                                            <td style="text-align: center; padding: 12px; color: var(--text-main)">${i.stock} ${i.unidad}</td>
+                                            <td style="text-align: right; padding: 12px; color: var(--text-main)">C$ ${parseFloat(i.ultimo_costo).toFixed(2)}</td>
+                                            <td style="text-align: right; padding: 12px; font-weight: 700; color: var(--verde-premium);">C$ ${parseFloat(i.valor_total).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="margin-top: 2rem; text-align: right;">
+                            <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+                        </div>
+                    </div>
+                `;
+                openModal(html);
+            });
+    }
+</script>
+
+<style>
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}

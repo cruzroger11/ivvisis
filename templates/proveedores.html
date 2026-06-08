@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Proveedores | IVVI S.A.{% endblock %}
+
+{% block content %}
+<div class="action-bar">
+    <div class="header-title">
+        <h2>Cartera de Proveedores</h2>
+    </div>
+    <button class="btn btn-primary" onclick="toggleForm()" id="toggle-btn">
+        <i class="fas fa-plus" id="toggle-icon"></i> <span id="toggle-text">Añadir Proveedor</span>
+    </button>
+</div>
+
+<div id="form-wrapper" style="overflow: hidden; max-height: 0; transition: max-height 0.45s ease, opacity 0.35s ease; opacity: 0;">
+<div class="card" id="form-card" style="max-width: 900px; margin: 0 auto 3rem auto;">
+    <h3><i class="fas fa-truck-ramp-box"></i> Registro de Proveedor</h3>
+    <form action="{{ url_for('proveedores') }}" method="POST">
+        <input type="hidden" name="id" id="prov-id">
+        <div class="form-grid">
+            <div class="form-group">
+                <label><i class="fas fa-industry"></i> Razón Social / Empresa</label>
+                <input type="text" name="razon_social" required placeholder="Ej: Aceros Industriales S.A.">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-id-card"></i> RUC de Proveedor</label>
+                <input type="text" name="ruc" required placeholder="Ej: 001-000000-0000X">
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label><i class="fas fa-phone-volume"></i> Centro de Contacto</label>
+                <input type="text" name="telefono" required placeholder="Ej: +505 2222 0000">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-at"></i> Correo Electrónico Corporativo</label>
+                <input type="email" name="email" required placeholder="Ej: pedidos@proveedor.com">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 1rem;">
+            <button type="reset" class="btn btn-secondary">Limpiar</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-truck-arrow-right"></i> Guardar Proveedor
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="card">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Socio / Razón Social</th>
+                    <th>Identificación RUC</th>
+                    <th>Canales de Contacto</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <strong style="color: var(--verde-premium); font-size: 1.1rem; display: block;">{{ item.razon_social }}</strong>
+                        <span style="font-size: 0.8rem; color: var(--gris-medio);"><i class="fas fa-calendar-check"></i> Activo en Catálogo</span>
+                    </td>
+                    <td>
+                        <span class="badge" style="background: var(--bg-primary); color: var(--text-main); border: 1px solid var(--border-color); font-family: monospace;">
+                            {{ item.ruc }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-main);">
+                                <i class="fas fa-phone" style="width: 20px; color: var(--verde-secundario); font-size: 0.8rem;"></i> {{ item.telefono }}
+                            </span>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">
+                                <i class="fas fa-envelope-open-text" style="width: 20px; color: var(--verde-secundario); font-size: 0.8rem;"></i> {{ item.email }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-success">Verificando</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" style="padding: 10px; border-radius: 12px;" title="Editar Proveedor"
+                                onclick="editProv('{{ item.id }}', '{{ item.razon_social }}', '{{ item.ruc }}', '{{ item.telefono }}', '{{ item.email }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <a href="{{ url_for('eliminar_entidad', tipo='proveedor', id=item.id) }}" class="btn" 
+                                style="padding: 10px; border-radius: 12px; color: var(--rojo-error); border: 1px solid var(--rojo-suave); background: var(--rojo-suave);"
+                                onclick="return confirm('¿Eliminar a este proveedor?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% block scripts %}
+<script>
+    function toggleForm(forceOpen) {
+        const wrapper = document.getElementById('form-wrapper');
+        const icon = document.getElementById('toggle-icon');
+        const text = document.getElementById('toggle-text');
+        const isOpen = wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '';
+        if (forceOpen || !isOpen) {
+            wrapper.style.maxHeight = '800px';
+            wrapper.style.opacity = '1';
+            icon.className = 'fas fa-times';
+            text.textContent = 'Cerrar';
+            if (forceOpen) setTimeout(() => wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+        } else {
+            wrapper.style.maxHeight = '0';
+            wrapper.style.opacity = '0';
+            icon.className = 'fas fa-plus';
+            text.textContent = 'Añadir Proveedor';
+        }
+    }
+    function editProv(id, rs, ruc, tel, email) {
+        toggleForm(true);
+        document.getElementById('prov-id').value = id;
+        document.querySelector('[name="razon_social"]').value = rs;
+        document.querySelector('[name="ruc"]').value = ruc;
+        document.querySelector('[name="telefono"]').value = tel;
+        document.querySelector('[name="email"]').value = email;
+        document.querySelector('#form-card h3').innerHTML = '<i class="fas fa-edit"></i> Editando Proveedor: ' + rs;
+    }
+</script>
+{% endblock %}
+{% endblock %}
