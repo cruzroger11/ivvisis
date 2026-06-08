@@ -14,7 +14,7 @@ from routes.auth import auth_bp
 from routes.auth_utils import login_required, role_required, get_current_user
 
 app = Flask(__name__)
-app.secret_key = 'ivvi_secret_key_pro'
+app.secret_key = os.environ.get('SECRET_KEY', 'ivvi_secret_key_pro')
 
 # Configuración base de datos SQLite
 basedir = os.path.abspath(os.path.dirname(__file__))
